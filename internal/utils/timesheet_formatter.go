@@ -9,6 +9,7 @@ import (
 
 // TimesheetShift represents a single shift entry
 type TimesheetShift struct {
+	PunchId       string
 	Date          string
 	Type          string
 	StartTime     time.Time
@@ -22,6 +23,7 @@ type TimesheetShift struct {
 type TimesheetDayEntry struct {
 	Date   string `json:"date"`
 	Shifts []struct {
+		PunchId string `json:"punchId"`
 		PunchIn struct {
 			TimestampWithTimezone struct {
 				Timestamp int64 `json:"timestamp"`
@@ -140,6 +142,12 @@ func ParseTimesheetData(rawData map[string]interface{}) ([]TimesheetShift, error
 				// Extract employee notes
 				employeeNotes, _ := shift["employeeNotes"].(string)
 
+				// Extract punch ID
+				punchId, _ := shift["punchId"].(string)
+				if punchId == "" {
+					punchId = "N/A"
+				}
+
 				// Convert timestamps to time.Time
 				startTime := time.Unix(int64(startTimestamp), 0)
 				endTime := time.Unix(int64(endTimestamp), 0)
@@ -155,6 +163,7 @@ func ParseTimesheetData(rawData map[string]interface{}) ([]TimesheetShift, error
 				}
 
 				shifts = append(shifts, TimesheetShift{
+					PunchId:       punchId,
 					Date:          parsedDate.Format("Mon 1/2"),
 					Type:          tagName,
 					StartTime:     startTime,
@@ -178,17 +187,38 @@ func ParseTimesheetData(rawData map[string]interface{}) ([]TimesheetShift, error
 	return shifts, nil
 }
 
+// FilterShiftsByTicketID returns shifts whose EmployeeNotes contain ticketID as a substring (case-insensitive).
+func FilterShiftsByTicketID(shifts []TimesheetShift, ticketID string) []TimesheetShift {
+	ticketID = strings.TrimSpace(ticketID)
+	if ticketID == "" {
+		return shifts
+	}
+	needle := strings.ToLower(ticketID)
+	var out []TimesheetShift
+	for _, s := range shifts {
+		if strings.Contains(strings.ToLower(s.EmployeeNotes), needle) {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 // FormatTimesheetTable formats the shifts into a table display
-func FormatTimesheetTable(shifts []TimesheetShift, verbose bool) string {
+func FormatTimesheetTable(shifts []TimesheetShift, verbose bool, veryVerbose bool) string {
 	if len(shifts) == 0 {
 		return "No shifts found for the specified date range."
 	}
 
 	var builder strings.Builder
 
-	// Header
-	builder.WriteString("Date           Type                      Start Time           End Time             Duration    Notes\n")
-	builder.WriteString("----           ----                      ----------           --------             --------    -----\n")
+	// Header - adjust based on veryVerbose flag
+	if veryVerbose {
+		builder.WriteString("Punch ID                    Date           Type                      Start Time           End Time             Duration    Notes\n")
+		builder.WriteString("--------                    ----           ----                      ----------           --------             --------    -----\n")
+	} else {
+		builder.WriteString("Date           Type                      Start Time           End Time             Duration    Notes\n")
+		builder.WriteString("----           ----                      ----------           --------             --------    -----\n")
+	}
 
 	// Rows
 	for _, shift := range shifts {
@@ -202,20 +232,32 @@ func FormatTimesheetTable(shifts []TimesheetShift, verbose bool) string {
 
 		// Handle notes based on verbose mode
 		var notes string
-		if verbose {
+		if verbose || veryVerbose {
 			notes = shift.EmployeeNotes
 		} else {
 			notes = truncateString(shift.EmployeeNotes, 50)
 		}
 
 		// Format the row with proper alignment including notes column
-		row := fmt.Sprintf("%-14s %-25s %-20s %-20s %-10s %s\n",
-			shift.Date,
-			truncateString(shift.Type, 24),
-			startTimeStr,
-			endTimeStr,
-			durationStr,
-			notes)
+		var row string
+		if veryVerbose {
+			row = fmt.Sprintf("%-24s %-14s %-25s %-20s %-20s %-10s %s\n",
+				shift.PunchId,
+				shift.Date,
+				truncateString(shift.Type, 24),
+				startTimeStr,
+				endTimeStr,
+				durationStr,
+				notes)
+		} else {
+			row = fmt.Sprintf("%-14s %-25s %-20s %-20s %-10s %s\n",
+				shift.Date,
+				truncateString(shift.Type, 24),
+				startTimeStr,
+				endTimeStr,
+				durationStr,
+				notes)
+		}
 
 		builder.WriteString(row)
 	}

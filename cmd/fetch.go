@@ -19,7 +19,9 @@ var fetchCmd = &cobra.Command{
 }
 
 var (
-	verboseFlag bool
+	verboseFlag         bool
+	veryVerboseFlag     bool
+	timesheetTicketFlag string
 )
 
 var fetchTimesheetCmd = &cobra.Command{
@@ -33,7 +35,9 @@ Examples:
   connectcli fetch timesheet 01/07/25          # Single date with year
   connectcli fetch timesheet 29/06-01/07       # Date range (current year)
   connectcli fetch timesheet 29/06/25-01/07/25 # Date range with year
-  connectcli fetch timesheet -v 01/07          # With verbose output (full notes)`,
+  connectcli fetch timesheet -v 01/07          # With verbose output (full notes)
+  connectcli fetch timesheet --very-verbose 01/07 # With very verbose output (full notes + punch IDs)
+  connectcli fetch timesheet 29/06-01/07 -t TECH-1234 # Only shifts whose note contains the ticket id; total hours at bottom`,
 	Args: cobra.ExactArgs(1),
 	RunE: runFetchTimesheet,
 }
@@ -73,6 +77,9 @@ func runFetchTimesheet(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Printf("Fetching timesheet from: %s to: %s\n", startDisplay, endDisplay)
 	}
+	if timesheetTicketFlag != "" {
+		fmt.Printf("Filter (ticket in notes): %s\n", timesheetTicketFlag)
+	}
 	fmt.Println()
 
 	// Create timesheet client and fetch data
@@ -99,17 +106,30 @@ func runFetchTimesheet(cmd *cobra.Command, args []string) error {
 				fmt.Println(string(prettyJSON))
 			}
 		} else {
+			displayShifts := shifts
+			if timesheetTicketFlag != "" {
+				displayShifts = utils.FilterShiftsByTicketID(shifts, timesheetTicketFlag)
+				if len(displayShifts) == 0 && len(shifts) > 0 {
+					fmt.Printf("No shifts found with ticket %q in employee notes for this date range.\n", timesheetTicketFlag)
+					return nil
+				}
+			}
+
 			// Display in table format
-			table := utils.FormatTimesheetTable(shifts, verboseFlag)
+			table := utils.FormatTimesheetTable(displayShifts, verboseFlag, veryVerboseFlag)
 			fmt.Println(table)
 
 			// Show summary statistics
-			if len(shifts) > 0 {
+			if len(displayShifts) > 0 {
 				var totalHours float64
-				for _, shift := range shifts {
+				for _, shift := range displayShifts {
 					totalHours += shift.TotalHours
 				}
-				fmt.Printf("\n📈 Summary: %d shifts, Total: %.2f hours\n", len(shifts), totalHours)
+				if timesheetTicketFlag != "" {
+					fmt.Printf("\n📈 Ticket %q: %d shifts, Total: %.2f hours\n", timesheetTicketFlag, len(displayShifts), totalHours)
+				} else {
+					fmt.Printf("\n📈 Summary: %d shifts, Total: %.2f hours\n", len(displayShifts), totalHours)
+				}
 			}
 		}
 	}
@@ -119,5 +139,7 @@ func runFetchTimesheet(cmd *cobra.Command, args []string) error {
 
 func init() {
 	fetchTimesheetCmd.Flags().BoolVarP(&verboseFlag, "verbose", "v", false, "Show full employee notes (not truncated)")
+	fetchTimesheetCmd.Flags().BoolVar(&veryVerboseFlag, "very-verbose", false, "Show full employee notes and punch IDs")
+	fetchTimesheetCmd.Flags().StringVarP(&timesheetTicketFlag, "ticket", "t", "", "Only show shifts whose employee note contains this ticket id (e.g. TECH-1234); summary shows total hours for those rows")
 	fetchCmd.AddCommand(fetchTimesheetCmd)
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"connectcli/internal/credentials"
 	"connectcli/internal/session"
@@ -22,7 +23,13 @@ func runValidateSession(cmd *cobra.Command, args []string) error {
 	// Load credentials
 	creds, err := credentials.LoadCredentials()
 	if err != nil {
-		return fmt.Errorf("failed to load credentials: %w", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Println("\nTo fix this issue:")
+		fmt.Println("1. Create a ~/.connectcli/credentials file")
+		fmt.Println("2. Add your session cookie and CSRF token:")
+		fmt.Println("   session=your_session_cookie_here")
+		fmt.Println("   csrf=your_csrf_token_here")
+		os.Exit(1)
 	}
 
 	fmt.Println("Loading credentials...")

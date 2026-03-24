@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -17,10 +18,11 @@ type JiraClient struct {
 }
 
 type JiraSearchResponse struct {
-	StartAt    int `json:"startAt"`
-	MaxResults int `json:"maxResults"`
-	Total      int `json:"total"`
-	Issues     []struct {
+	StartAt       int    `json:"startAt"`
+	MaxResults    int    `json:"maxResults"`
+	Total         int    `json:"total"`
+	NextPageToken string `json:"nextPageToken"`
+	Issues        []struct {
 		Key    string `json:"key"`
 		Fields struct {
 			Summary string `json:"summary"`
@@ -34,34 +36,29 @@ type JiraTicket struct {
 }
 
 func NewJiraClient(jiraToken string) *JiraClient {
-	// Parse the Jira token format: krishna@securify.llc:<token>
-	parts := strings.Split(jiraToken, ":")
-	if len(parts) != 2 {
-		return nil
-	}
-
-	email := parts[0]
-	token := parts[1]
-
-	// Create basic auth header
-	auth := email + ":" + token
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
-
+	// jiraToken format: email:apiToken
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(jiraToken))
 	return &JiraClient{
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		client: &http.Client{Timeout: 30 * time.Second},
 		baseURL: "https://aanyanshllc.atlassian.net",
 		auth:    "Basic " + encodedAuth,
 	}
 }
 
-// FetchJiraTickets fetches Jira tickets with pagination
-func (j *JiraClient) FetchJiraTickets(startAt int, maxResults int) (*JiraSearchResponse, error) {
-	url := fmt.Sprintf("%s/rest/api/3/search?jql=project=TECH&fields=key,summary&maxResults=%d&startAt=%d",
-		j.baseURL, maxResults, startAt)
+// FetchJiraTickets fetches Jira tickets with pagination using nextPageToken
+func (j *JiraClient) FetchJiraTickets(nextPageToken string, maxResults int) (*JiraSearchResponse, error) {
+	endpoint, _ := url.Parse(j.baseURL + "/rest/api/3/search/jql")
+	q := endpoint.Query()
+	jql := "project = TECH ORDER BY created DESC"
+	q.Set("jql", jql)
+	q.Set("fields", "key,summary")
+	q.Set("maxResults", fmt.Sprintf("%d", maxResults))
+	if strings.TrimSpace(nextPageToken) != "" {
+		q.Set("nextPageToken", nextPageToken)
+	}
+	endpoint.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", endpoint.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -97,10 +94,12 @@ func (j *JiraClient) FetchJiraTickets(startAt int, maxResults int) (*JiraSearchR
 func (j *JiraClient) ConvertToTickets(response *JiraSearchResponse) []JiraTicket {
 	var tickets []JiraTicket
 	for _, issue := range response.Issues {
-		tickets = append(tickets, JiraTicket{
-			Key:     issue.Key,
-			Summary: issue.Fields.Summary,
-		})
+		tickets = append(tickets, JiraTicket{Key: issue.Key, Summary: issue.Fields.Summary})
 	}
 	return tickets
 }
+
+
+
+
+

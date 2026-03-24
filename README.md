@@ -26,7 +26,13 @@ A command-line interface tool for managing the Connecteam application.
    session=2|1:0|10:1751652781|7:session|48:ZWFjYzc5ZTEtMDVkMC00YmM1LTk5ZDMtYTAzN2Y3NmRjYWUz|c5b18a9f8a9f941af746a938848bf7b608295bbd0dbd259efc4d30a6e97181ad
    csrf=your_csrf_token_here
    jira=krishna@securify.llc:your_atlassian_token_here
+   slack_webhook=https://hooks.slack.com/services/...
+   slack_user_token=xoxp-your-user-token
+   slack_bot_token=xoxb-your-bot-token
    ```
+
+   - **`slack_webhook`** — incoming webhook for channel messages (punch in/out notifications).
+   - **`slack_user_token`** or **`slack_bot_token`** (optional) — Bearer token for Slack **`users.profile.set`**. On punch-in, your status text is set to the **client name**; punch-out clears it. Use a token whose scopes allow profile updates (often **`users.profile:write`** on a user token; bot tokens may only update the bot’s profile depending on workspace settings). If both keys are present, the **last** one in the file wins.
 
 4. **Configuration (auto-generated):**
    The tool will automatically create a `~/.connectcli/config` file with:
