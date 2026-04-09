@@ -17,10 +17,8 @@ type JiraStorage struct {
 }
 
 func NewJiraStorage() *JiraStorage {
-	// Store in jira-tickets directory
-	dirPath := "jira-tickets"
 	return &JiraStorage{
-		dirPath: dirPath,
+		dirPath: "jira-tickets",
 		tickets: make(map[string]api.JiraTicket),
 	}
 }
@@ -115,10 +113,5 @@ func (j *JiraStorage) GetTickets() []api.JiraTicket {
 }
 
 // Pagination helpers
-func (j *JiraStorage) GetNextPageToken() string { return j.nextPageToken }
+func (j *JiraStorage) GetNextPageToken() string      { return j.nextPageToken }
 func (j *JiraStorage) SetNextPageToken(token string) { j.nextPageToken = token }
-
-
-
-
-

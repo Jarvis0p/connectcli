@@ -114,3 +114,11 @@ func (r *ClockStatusResponse) ClientName() string {
 	}
 	return r.Data.OpenPunch.PunchTag.Name
 }
+
+// OpenPunchID returns the open punch id, if any.
+func (r *ClockStatusResponse) OpenPunchID() string {
+	if r.Data.OpenPunch == nil {
+		return ""
+	}
+	return r.Data.OpenPunch.PunchID
+}

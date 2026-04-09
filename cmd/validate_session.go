@@ -33,8 +33,8 @@ func runValidateSession(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Loading credentials...")
-	fmt.Printf("Session cookie: %s...\n", creds.Session[:20]+"...")
-	fmt.Printf("CSRF token: %s...\n", creds.CSRF[:20]+"...")
+	fmt.Printf("Session cookie: %s...\n", previewSecret(creds.Session))
+	fmt.Printf("CSRF token: %s...\n", previewSecret(creds.CSRF))
 	fmt.Println()
 
 	// Create validator and validate session
@@ -58,4 +58,11 @@ func runValidateSession(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func previewSecret(s string) string {
+	if len(s) <= 24 {
+		return s
+	}
+	return s[:20] + "..."
 }

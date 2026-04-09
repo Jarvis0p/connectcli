@@ -16,10 +16,8 @@ type ClientsStorage struct {
 }
 
 func NewClientsStorage() *ClientsStorage {
-	// Store in clients directory
-	dirPath := "clients"
 	return &ClientsStorage{
-		dirPath: dirPath,
+		dirPath: "clients",
 		clients: make(map[string]api.Client),
 	}
 }

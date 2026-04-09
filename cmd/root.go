@@ -14,15 +14,6 @@ var rootCmd = &cobra.Command{
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if punchOutFlag {
-			return runPunchOut()
-		}
-		if punchInFlag != "" {
-			return runPunchIn()
-		}
-		return cmd.Help()
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -35,10 +26,6 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&punchInFlag, "punchin", "i", "", "Punch in to a client (file path or UUID)")
-	rootCmd.Flags().BoolVarP(&punchOutFlag, "punchout", "o", false, "Punch out from current shift")
-	rootCmd.Flags().StringVarP(&punchNoteFlag, "note", "n", "", "Note for punch out")
-
 	rootCmd.AddCommand(validateSessionCmd)
 	rootCmd.AddCommand(fetchCmd)
 	rootCmd.AddCommand(addshiftCmd)

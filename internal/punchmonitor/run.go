@@ -19,6 +19,8 @@ import (
 	"connectcli/internal/utils"
 )
 
+const defaultMonitorInterval = 10 * time.Minute
+
 // LogPath returns the path to the monitor log file.
 func LogPath() (string, error) {
 	d, err := Dir()
@@ -28,10 +30,14 @@ func LogPath() (string, error) {
 	return filepath.Join(d, "punch_monitor.log"), nil
 }
 
-// Spawn starts a detached background monitor (re-execs this binary with __punch-monitor).
-func Spawn() error {
+// Spawn starts a detached background monitor (re-execs this binary with __punch-monitor --period hh:mm).
+func Spawn(interval time.Duration) error {
 	if err := Stop(); err != nil {
 		return err
+	}
+
+	if interval < time.Minute {
+		interval = defaultMonitorInterval
 	}
 
 	exe, err := os.Executable()
@@ -48,7 +54,8 @@ func Spawn() error {
 		return fmt.Errorf("failed to open monitor log: %w", err)
 	}
 
-	cmd := exec.Command(exe, "__punch-monitor")
+	periodStr := utils.FormatDurationAsHHMM(interval)
+	cmd := exec.Command(exe, "__punch-monitor", "--period", periodStr)
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	cmd.Stdin = nil
@@ -72,8 +79,12 @@ func Spawn() error {
 	return nil
 }
 
-// RunMonitor is the main loop for the background process (every 10 min Slack + session check).
-func RunMonitor() error {
+// RunMonitor is the main loop for the background process (Slack on interval + session check).
+func RunMonitor(interval time.Duration) error {
+	if interval < time.Minute {
+		interval = defaultMonitorInterval
+	}
+
 	logPath, err := LogPath()
 	if err != nil {
 		return err
@@ -84,7 +95,7 @@ func RunMonitor() error {
 	}
 	defer f.Close()
 	logger := log.New(f, "", log.LstdFlags)
-	logger.Printf("punch monitor started pid=%d", os.Getpid())
+	logger.Printf("punch monitor started pid=%d interval=%s", os.Getpid(), utils.FormatDurationAsHHMM(interval))
 
 	creds, err := credentials.LoadCredentials()
 	if err != nil {
@@ -120,7 +131,7 @@ func RunMonitor() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	ticker := time.NewTicker(10 * time.Minute)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	me := os.Getpid()
@@ -151,7 +162,18 @@ func RunMonitor() error {
 				clientName = "unknown client"
 			}
 
-			msg := fmt.Sprintf("clocked-in %s for %s", clientName, notifications.FormatDuration(elapsed))
+			loc, err := time.LoadLocation("Asia/Kolkata")
+			if err != nil {
+				loc = time.Local
+			}
+			openID := resp.OpenPunchID()
+			totalToday, err := utils.TotalHoursTodayIncludingOpenShift(creds, objectID, loc, openID, elapsed)
+			if err != nil {
+				logger.Printf("today total hours: %v", err)
+				totalToday = elapsed.Hours()
+			}
+
+			msg := fmt.Sprintf("clocked in %s for %s\ntotal hours today: %.2f h", clientName, notifications.FormatDuration(elapsed), totalToday)
 			if err := slack.Send(msg); err != nil {
 				logger.Printf("slack error: %v", err)
 			} else {
