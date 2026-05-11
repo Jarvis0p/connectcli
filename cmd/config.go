@@ -50,15 +50,19 @@ func runConfigWizard(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	sessionToken, err := readLine("Connecteam session_token cookie: ")
+	if err != nil {
+		return err
+	}
 	csrf, err := readLine("CSRF (_spirit) token: ")
 	if err != nil {
 		return err
 	}
-	if sessionCookie == "" || csrf == "" {
-		return fmt.Errorf("session and CSRF token are required")
+	if sessionCookie == "" || sessionToken == "" || csrf == "" {
+		return fmt.Errorf("session, session_token, and CSRF token are all required")
 	}
 
-	patch := &credentials.Credentials{Session: sessionCookie, CSRF: csrf}
+	patch := &credentials.Credentials{Session: sessionCookie, SessionToken: sessionToken, CSRF: csrf}
 	validator := sesspkg.NewValidator()
 	fmt.Println("\nValidating session with Connecteam...")
 	ok, err := validator.ValidateSession(patch)
