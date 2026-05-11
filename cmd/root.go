@@ -29,4 +29,5 @@ func init() {
 	rootCmd.AddCommand(validateSessionCmd)
 	rootCmd.AddCommand(fetchCmd)
 	rootCmd.AddCommand(addshiftCmd)
+	rootCmd.AddCommand(deleteCmd)
 }

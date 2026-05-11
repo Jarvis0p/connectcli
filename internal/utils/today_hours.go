@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"strconv"
 	"time"
 
 	"connectcli/internal/api"
@@ -15,7 +14,7 @@ func TotalHoursTodayIncludingOpenShift(creds *credentials.Credentials, punchCloc
 	today := time.Now().In(loc).Format("2006-01-02")
 
 	tc := api.NewTimesheetClient()
-	resp, err := tc.FetchTimesheet(creds, strconv.Itoa(punchClockObjectID), today, today)
+	resp, err := tc.FetchTimesheet(creds, punchClockObjectID, today, today)
 	if err != nil {
 		return 0, err
 	}

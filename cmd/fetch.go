@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"connectcli/internal/api"
 	"connectcli/internal/config"
@@ -84,8 +85,12 @@ func runFetchTimesheet(cmd *cobra.Command, args []string) error {
 
 	// Create timesheet client and fetch data
 	client := api.NewTimesheetClient()
+	objectID, err := strconv.Atoi(cfg.PunchClockObjectID)
+	if err != nil {
+		return fmt.Errorf("invalid punch clock object ID in config: %w", err)
+	}
 
-	response, err := client.FetchTimesheet(creds, cfg.PunchClockObjectID, startDate, endDate)
+	response, err := client.FetchTimesheet(creds, objectID, startDate, endDate)
 	if err != nil {
 		return fmt.Errorf("failed to fetch timesheet: %w", err)
 	}

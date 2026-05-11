@@ -68,7 +68,7 @@ func (c *ClockStatusClient) GetStatus(creds *credentials.Credentials, objectID i
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", fmt.Sprintf("session=%s", creds.Session))
+	req.Header.Set("Cookie", creds.ConnecteamCookieHeader())
 	req.Header.Set("User-Agent", "ConnectCLI/1.0")
 
 	resp, err := c.client.Do(req)

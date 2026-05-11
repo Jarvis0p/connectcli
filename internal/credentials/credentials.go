@@ -10,6 +10,7 @@ import (
 
 type Credentials struct {
 	Session        string
+	SessionToken   string
 	CSRF           string
 	Jira           string
 	Authorization  string
@@ -53,6 +54,8 @@ func LoadCredentials() (*Credentials, error) {
 		switch key {
 		case "session":
 			creds.Session = value
+		case "session_token":
+			creds.SessionToken = value
 		case "csrf":
 			creds.CSRF = value
 		case "jira":
@@ -76,6 +79,9 @@ func LoadCredentials() (*Credentials, error) {
 
 	if creds.CSRF == "" {
 		return nil, fmt.Errorf("CSRF token not found in credentials file")
+	}
+	if creds.SessionToken == "" {
+		return nil, fmt.Errorf("session_token cookie not found in credentials file")
 	}
 
 	return creds, nil
@@ -113,6 +119,8 @@ func LoadCredentialsOptional() (*Credentials, error) {
 		switch key {
 		case "session":
 			creds.Session = value
+		case "session_token":
+			creds.SessionToken = value
 		case "csrf":
 			creds.CSRF = value
 		case "jira":
@@ -136,6 +144,9 @@ func MergeCredentials(base, patch *Credentials) *Credentials {
 	out := *base
 	if patch.Session != "" {
 		out.Session = patch.Session
+	}
+	if patch.SessionToken != "" {
+		out.SessionToken = patch.SessionToken
 	}
 	if patch.CSRF != "" {
 		out.CSRF = patch.CSRF
@@ -189,6 +200,11 @@ func SaveCredentials(c *Credentials) error {
 			return err
 		}
 	}
+	if merged.SessionToken != "" {
+		if err := writeLine("session_token", merged.SessionToken); err != nil {
+			return err
+		}
+	}
 	if merged.CSRF != "" {
 		if err := writeLine("csrf", merged.CSRF); err != nil {
 			return err
@@ -207,4 +223,9 @@ func SaveCredentials(c *Credentials) error {
 		return err
 	}
 	return nil
+}
+
+// ConnecteamCookieHeader builds the cookie header used by Connecteam endpoints.
+func (c *Credentials) ConnecteamCookieHeader() string {
+	return fmt.Sprintf("session=%s; session_token=%s", c.Session, c.SessionToken)
 }

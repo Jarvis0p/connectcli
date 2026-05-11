@@ -218,17 +218,6 @@ func calculateStartTime(creds *credentials.Credentials, objectID int, date time.
 		startTime = defaultStart
 	}
 
-	// Check if starting at this time would extend past midnight
-	// We'll assume a reasonable maximum shift duration of 8 hours for this check
-	maxShiftDuration := 8 * time.Hour
-	estimatedEndTime := startTime.Add(maxShiftDuration)
-	dayEnd := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, loc)
-
-	if estimatedEndTime.After(dayEnd) {
-		// If the estimated end time would be past midnight, return an error
-		return time.Time{}, fmt.Errorf("cannot schedule new shift: existing shifts extend too late in the day (latest ends at %s). The day is already fully booked", latestEnd.Format("15:04"))
-	}
-
 	return startTime, nil
 }
 
@@ -241,7 +230,7 @@ func fetchExistingShifts(creds *credentials.Credentials, objectID int, date time
 	client := api.NewTimesheetClient()
 
 	// Fetch timesheet data for the specific date
-	response, err := client.FetchTimesheet(creds, fmt.Sprintf("%d", objectID), dateStr, dateStr)
+	response, err := client.FetchTimesheet(creds, objectID, dateStr, dateStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch timesheet: %w", err)
 	}

@@ -12,6 +12,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var deleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete Connecteam resources",
+}
+
 var deleteShiftCmd = &cobra.Command{
 	Use:   "shift <punch-id>",
 	Short: "Delete a shift by punch ID",

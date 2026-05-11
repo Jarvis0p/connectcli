@@ -18,7 +18,7 @@ type TimesheetClient struct {
 type TimesheetRequest struct {
 	StartDate       string `json:"startDate"`
 	EndDate         string `json:"endDate"`
-	ObjectID        string `json:"objectId"`
+	ObjectID        int    `json:"objectId"`
 	DefaultTimezone string `json:"defaultTimezone"`
 	Spirit          string `json:"_spirit"`
 }
@@ -44,7 +44,7 @@ func NewTimesheetClient() *TimesheetClient {
 }
 
 // FetchTimesheet fetches timesheet data for the specified date range
-func (t *TimesheetClient) FetchTimesheet(creds *credentials.Credentials, objectID, startDate, endDate string) (*TimesheetResponse, error) {
+func (t *TimesheetClient) FetchTimesheet(creds *credentials.Credentials, objectID int, startDate, endDate string) (*TimesheetResponse, error) {
 	// Prepare the request body
 	reqBody := TimesheetRequest{
 		StartDate:       startDate,
@@ -67,7 +67,7 @@ func (t *TimesheetClient) FetchTimesheet(creds *credentials.Credentials, objectI
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", fmt.Sprintf("session=%s", creds.Session))
+	req.Header.Set("Cookie", creds.ConnecteamCookieHeader())
 	req.Header.Set("User-Agent", "ConnectCLI/1.0")
 
 	// Make the request

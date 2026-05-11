@@ -70,7 +70,7 @@ func PutEditShift(creds *credentials.Credentials, objectID int, punchID, tagID s
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", fmt.Sprintf("session=%s", creds.Session))
+	req.Header.Set("Cookie", creds.ConnecteamCookieHeader())
 	req.Header.Set("User-Agent", "ConnectCLI/1.0")
 
 	hc := newEditShiftHTTPClient()

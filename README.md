@@ -18,12 +18,14 @@ A command-line interface tool for managing the Connecteam application.
    Create a `.connectcli/credentials` file in your home directory with the following format:
    ```
    session=<your_session_cookie>
+   session_token=<your_session_token_cookie>
    csrf=<your_csrf_token>
    ```
 
    Example:
    ```
    session=2|1:0|10:1751652781|7:session|48:ZWFjYzc5ZTEtMDVkMC00YmM1LTk5ZDMtYTAzN2Y3NmRjYWUz|c5b18a9f8a9f941af746a938848bf7b608295bbd0dbd259efc4d30a6e97181ad
+   session_token=your_session_token_cookie_here
    csrf=your_csrf_token_here
    jira=krishna@securify.llc:your_atlassian_token_here
    slack_webhook=https://hooks.slack.com/services/...
@@ -49,7 +51,7 @@ Check if your saved session is still valid:
 ```
 
 This command will:
-1. Load the session cookie and CSRF token from `~/.connectcli/credentials`
+1. Load the session cookies and CSRF token from `~/.connectcli/credentials`
 2. Make a request to the Connecteam API to validate the session
 3. Display whether the session is valid or not
 
@@ -60,7 +62,7 @@ Fetch the content structure and save the punch clock object ID:
 ```
 
 This command will:
-1. Load the session cookie from `~/.connectcli/credentials`
+1. Load the session cookies from `~/.connectcli/credentials`
 2. Fetch the content structure from the Connecteam API
 3. Extract the punch clock object ID (9229216 in your case)
 4. Save it to `~/.connectcli/config` for future use
@@ -89,7 +91,7 @@ Fetch Jira tickets from the TECH project:
 ```
 
 This command will:
-1. Load the session cookie and CSRF token from `~/.connectcli/credentials`
+1. Load the session cookies and CSRF token from `~/.connectcli/credentials`
 2. Load the punch clock object ID from `~/.connectcli/config`
 3. Parse the date(s) in dd/mm/yy format
 4. Fetch timesheet data from the Connecteam API

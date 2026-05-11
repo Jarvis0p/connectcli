@@ -66,7 +66,7 @@ func (c *ClientsClient) FetchClients(creds *credentials.Credentials, objectID in
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", fmt.Sprintf("session=%s", creds.Session))
+	req.Header.Set("Cookie", creds.ConnecteamCookieHeader())
 	req.Header.Set("User-Agent", "ConnectCLI/1.0")
 
 	// Make the request

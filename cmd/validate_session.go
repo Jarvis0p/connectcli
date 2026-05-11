@@ -14,7 +14,7 @@ import (
 var validateSessionCmd = &cobra.Command{
 	Use:   "validate-session",
 	Short: "Validate the saved session credentials",
-	Long: `Validate the session cookie and CSRF token saved in .connectcli/credentials file.
+	Long: `Validate the session cookies and CSRF token saved in .connectcli/credentials file.
 This command will make a request to the Connecteam API to check if the session is still valid.`,
 	RunE: runValidateSession,
 }
@@ -26,8 +26,9 @@ func runValidateSession(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		fmt.Println("\nTo fix this issue:")
 		fmt.Println("1. Create a ~/.connectcli/credentials file")
-		fmt.Println("2. Add your session cookie and CSRF token:")
+		fmt.Println("2. Add your session cookies and CSRF token:")
 		fmt.Println("   session=your_session_cookie_here")
+		fmt.Println("   session_token=your_session_token_cookie_here")
 		fmt.Println("   csrf=your_csrf_token_here")
 		os.Exit(1)
 	}
